@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="options-box">
+        <h1>Know Your Rawatbhata</h1>
+        <hr>
+        <div>
+          <input id="zoom-to-area-text" class="spread" type="text" placeholder="Enter your favorite area!">
+          <input id="zoom-to-area" class="button-spread" type="button" value="Zoom">
+          <table>
+            <tbody data-bind="foreach: location">
+              <tr>
+                <td data-bind="text: title, click: selectLocation"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+    <script src="js/map.js"></script>
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/knockout-3.2.0.js"></script>
+
+    <script async defer
+        src=
+        "https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyCNAt2_pzd-NypOYc4z_HV3-Gdsl_k6coA&v=3&callback=initMap">
+    </script>
+
+  </body>
+</html>
