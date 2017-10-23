@@ -1,35 +1,50 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <link rel="stylesheet" href="css/style.css">
-  </head>
-  <body>
-    <div class="container">
-      <div class="options-box">
-        <h1>Know Your Rawatbhata</h1>
-        <hr>
-        <div>
-          <input id="zoom-to-area-text" class="spread" type="text" placeholder="Enter your favorite area!">
-          <input id="zoom-to-area" class="button-spread" type="button" value="Zoom">
-          <table>
-            <tbody data-bind="foreach: location">
-              <tr>
-                <td data-bind="text: title, click: selectLocation"></td>
-              </tr>
-            </tbody>
-          </table>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="=width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=no">
+
+  <title>Know Your Rawatbhata </title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:100,300" >
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+
+</head>
+
+<body>
+  <header>
+    <h1><i id="nav-button" class="nav-button fa fa-lg fa-arrow-circle-up" data-bind="click: navClick, css: {'fa-arrow-circle-down': isNavClosed}"></i>Know Your Rawatbhata</h1>
+  </header>
+
+  <div id ="container" class="container">
+    <div id="menu" class="menu speed" data-bind="css: {'moveUp': isNavClosed}">
+      <div id="list-container" class="list-container">
+        <div id="filter" class="filter">
+          <div><p>Filter results:</p>
+            <form id="filter-form" class="filter-form">
+              <input data-bind="textInput: filter, valueUpdate:'afterkeydown'" autocomplete="off" id="filter-input" class="filter-input" placeholder="Search from the list" >
+              <button type="submit" class="submit">Clear</button>
+            </form>
+          </div>
+        </div>
+        <div id="list" class="list">
+          <h2>Places</h2>
+          <ul data-bind="foreach: filteredSpaceList, visible: filteredSpaceList().length > 0" id="list-spaces" class="list-spaces">
+            <li data-bind= "text: name, click: $root.itemClick"></li>
+          </ul>
         </div>
       </div>
-      <div id="map"></div>
     </div>
-    <script src="js/map.js"></script>
-    <script src="js/jquery-3.2.1.min.js"></script>
-    <script src="js/knockout-3.2.0.js"></script>
+    <div id="map" class="map"></div>
+    <div id="map-error" class="map-error"></div>
+  </div>
+  
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+  <script src="js/map.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCNAt2_pzd-NypOYc4z_HV3-Gdsl_k6coA&v3&callback=googleSuccess" onerror="mapError()"></script>
 
-    <script async defer
-        src=
-        "https://maps.googleapis.com/maps/api/js?libraries=geometry&key=AIzaSyCNAt2_pzd-NypOYc4z_HV3-Gdsl_k6coA&v=3&callback=initMap">
-    </script>
-
-  </body>
+</body>
 </html>

@@ -1,116 +1,240 @@
-var map, index, locations;
+var initialSpaces = [
+{
+  "name": 'Baroli Temple',
+  "location": {"lat": 24.95806, "lng": 75.59361},
+  "fs_id": "4d53cf28f9f9b60c9c2527e6"
+},
+{
+  "name": "RAPS Hospital",
+  "location": {"lat": 24.931954, "lng": 75.601041},
+  "fs_id": "50a33faee4b068340f133fc1"
+},
+{
+  "name": "Axis ATM Bank",
+  "location": {"lat": 24.931789, "lng": 75.601674},
+  "fs_id": "59edceeda3061936f1b3c205"
+},
+{
+  "name": "Heavy Water Colony",
+  "location": {"lat": 24.932655, "lng": 75.600987},
+  "fs_id": "4ff698eee4b04619c7162ba1"
+},
+{
+  "name": "NTC Gate",
+  "location": {"lat": 24.935399, "lng": 75.605826},
+  "fs_id": "59edd0e06bdee6069e109ee4"
+},
+{
+  "name": "Main Market",
+  "location": {"lat": 24.930228, "lng": 75.592779}, 
+  "fs_id": "5237401e11d2f50aefae72dc"
+},
+{
+  "name": "Open Air Theatre",
+  "location": {"lat": 24.936354, "lng": 75.605019}, 
+  "fs_id": "53f3feca498e94887baee5b9"
+},
+{
+  "name": "Yogmaya",
+  "location": {"lat": 24.937331, "lng": 75.613319}, 
+  "fs_id": "508d2d6fe4b0ed73380862fd"
+},
+]
 
-// Create a new blank array for all the listing markers.
-var markers = [];
+// Foursquare API Url parameters in global scope
+var BaseUrl = "https://api.foursquare.com/v2/venues/",
+    fsClient_id = "client_id=JJDI4PSIYTKIQHVNDVV304ITAVJXE5Q510JCB4G323SDY40W",
+    fsClient_secret = "&client_secret=YWNJJIONIRORBNZ1P2PQNMKJEO1YOAPVUCWX3TFVV5FFW4SL",
+    fsVersion = "&v=20161507";
 
-function initMap() {
-  // Constructor creates a new map - only center and zoom are required.
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: {lat: 24.9306, lng: 75.5909},
-    zoom: 13
+
+// Create global variables to use in google maps
+var map,
+  infowindow,
+  bounds;
+
+//googleSuccess() is called when page is loaded
+function googleSuccess() {
+  "use strict";
+
+  //Google map elements - set custom map marker
+  var image = {
+    "url": "img/32x32.png",
+    "size": new google.maps.Size(32, 32),
+    "origin": new google.maps.Point(0, 0),
+    "anchor": new google.maps.Point(0, 32)
+  };
+
+  //Google map elements - set map options
+  var mapOptions = {
+    "center": {
+      "lat": 24.9306, 
+      "lng": 75.5909
+    },
+    zoom: 13,
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    mapTypeControl: false,
+    mapTypeControlOptions: {
+    style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+    }
+  };
+  map = new google.maps.Map(document.getElementById("map"), mapOptions);
+  infowindow = new google.maps.InfoWindow({
+    maxWidth: 150,
+    content: ""
+  });
+  bounds = new google.maps.LatLngBounds();
+
+  // Close infowindow when clicked elsewhere on the map
+  map.addListener("click", function(){
+    infowindow.close(infowindow);
   });
 
-  // These are the real estate listings that will be shown to the user.
-  // Normally we'd have these in a database instead.
-  locations = [
-    {title: 'Baroli Temple', location: {lat: 24.95806, lng: 75.59361}},
-    {title: 'Uma Oil Company', location: {lat: 24.938861, lng: 75.587233}},
-    {title: 'RAPP Hospital', location: {lat: 24.931954, lng: 75.601041}},
-    {title: 'Axis Bank ATM', location: {lat: 24.931789, lng: 75.601674}},
-    {title: 'Heavy Water Colony', location: {lat: 24.932655, lng: 75.600987}},
-    {title: 'NTC Gate', location: {lat: 24.935399, lng: 75.605826}}
-  ];
+  // Recenter map upon window resize
+  window.onresize = function () {
+    map.fitBounds(bounds);
+  };
 
-  var largeInfowindow = new google.maps.InfoWindow();
-  var bounds = new google.maps.LatLngBounds();
 
-  // The following group uses the location array to create an array of markers on initialize.
-  for (var i = 0; i < locations.length; i++) {
-    // Get the position from the location array.
-    var position = locations[i].location;
-    var title = locations[i].title;
-    // Create a marker per location, and put into markers array.
-    var marker = new google.maps.Marker({
-      map: map,
-      position: position,
-      title: title,
-      animation: google.maps.Animation.DROP,
-      id: i
-    });
-    // Push the marker to our array of markers.
-    markers.push(marker);
-    // Create an onclick event to open an infowindow at each marker.
-    marker.addListener('click', function() {
-      populateInfoWindow(this, largeInfowindow);
-    });
-    bounds.extend(markers[i].position);
+  //Creating Space object
+  var Space = function (data, id, map) {
+    var self = this;
+    this.name = ko.observable(data.name);
+    this.location = data.location;
+    this.marker = "";
+    this.markerId = id;
+    this.fs_id = data.fs_id;
+    this.shortUrl = "";
+    this.photoUrl = "";
   }
-  // Extend the boundaries of the map for each marker
 
-  document.getElementById('zoom-to-area').addEventListener('click', function() {
-    zoomToArea();
-  });
-
-  map.fitBounds(bounds);
-}
-
-// This function populates the infowindow when the marker is clicked. We'll only allow
-// one infowindow which will open at the marker that is clicked, and populate based
-// on that markers position.
-function populateInfoWindow(marker, infowindow) {
-  // Check to make sure the infowindow is not already opened on this marker.
-  if (infowindow.marker != marker) {
-    infowindow.marker = marker;
-    infowindow.setContent('<div>' + marker.title + '</div> <div>Latitude: ' + marker.position.lat().toFixed(2) + ', Longitude: ' + marker.position.lng().toFixed(2) + '</div>');
-    infowindow.open(map, marker);
-    // Make sure the marker property is cleared if the infowindow is closed.
-    infowindow.addListener('closeclick',function(){
-      infowindow.setMarker = null;
-    });
+  // Get contect infowindows
+  function getContent(space) {
+    var contentString = "<h3>" + space.name +
+      "</h3><br><div style='width:200px;min-height:120px'><img src=" + '"' +
+      space.photoUrl + '"></div><div><a href="' + space.shortUrl +
+      '" target="_blank">More info in Foursquare</a><img src="img/foursquare_150.png">';
+    var errorString = "Oops, Foursquare content not available."
+    if (space.name.length > 0) {
+      return contentString;
+      } else {
+      return errorString;
+      }
   }
-}
 
-function zoomToArea() {
-  // Initialize the geocoder.
-  var geocoder = new google.maps.Geocoder();
-  // Get the address or place that the user entered.
-  var address = document.getElementById('zoom-to-area-text').value;
-  // Make sure the address isn't blank.
-  if (address == '') {
-    window.alert('You must enter an area, or address.');
-  } else {
-    // Geocode the address/area entered to get the center. Then, center the map
-    // on it and zoom in
-    geocoder.geocode(
-      { address: address,
-        componentRestrictions: {locality: 'Rawatbhata'}
-      }, function(results, status) {
-        if (status == google.maps.GeocoderStatus.OK) {
-          map.setCenter(results[0].geometry.location);
-          map.setZoom(15);
-        } else {
-          window.alert('We could not find that location - try entering a more' +
-              ' specific place.');
-        }
+  // Bounce effect on marker
+  function toggleBounce(marker) {
+    if (marker.getAnimation() !== null) {
+      marker.setAnimation(null);
+    } else {
+      marker.setAnimation(google.maps.Animation.BOUNCE);
+      setTimeout(function() {
+        marker.setAnimation(null);
+      }, 700);
+    }
+  };
+
+ function ViewModel() {
+    var self = this;
+
+    // Nav button control
+    this.isNavClosed = ko.observable(false);
+    this.navClick = function () {
+      this.isNavClosed(!this.isNavClosed());
+    };
+
+    // Creating list elements from the spaceList
+    this.spaceList = ko.observableArray();
+    initialSpaces.forEach(function(item){
+      self.spaceList.push(new Space(item));
+    });
+
+    // Create a marker per space item
+    this.spaceList().forEach(function(space) {
+      var marker = new google.maps.Marker({
+        map: map,
+        position: space.location,
+        animation: google.maps.Animation.DROP
       });
-  }
-}
-
-var Location = function(data) {
-
-  this.title = ko.observable(data.title);
-  this.location = ko.observable(data.location);
-
-}
-
-var ViewModel = function() {
-  
-  var self = this;
-
-  this.locationList = ko.observableArray(locations);
-
-  location.forEach(function(place) {
-    self.locationList.push(new Location(place));
+      space.marker = marker;
+      // Extend the boundaries of the map for each marker
+      bounds.extend(marker.position);
+      // Create an onclick event to open an infowindow and bounce the marker at each marker
+      marker.addListener("click", function(e) {
+        map.panTo(this.position);
+        //pan down infowindow by 200px to keep whole infowindow on screen
+        map.panBy(0, -200)
+        infowindow.setContent(getContent(space));
+        infowindow.open(map, marker);
+        toggleBounce(marker);
+    });
   });
 
+    // Foursquare API request
+    self.getFoursquareData = ko.computed(function(){
+      self.spaceList().forEach(function(space) {
+
+        // Set initail variables to build the correct URL for each space
+        var  venueId = space.fs_id + "/?";
+        var foursquareUrl = BaseUrl + venueId + fsClient_id + fsClient_secret + fsVersion;
+
+        // AJAX call to Foursquare
+        $.ajax({
+          type: "GET",
+          url: foursquareUrl,
+          dataType: "json",
+          cache: false,
+          success: function(data) {
+            var response = data.response ? data.response : "";
+            var venue = response.venue ? data.venue : "";
+                space.name = response.venue["name"];
+                space.shortUrl = response.venue["shortUrl"];
+          }
+        });
+      });
+    });
+
+    // Creating click for the list item
+    this.itemClick = function (space) {
+      var markerId = space.markerId;
+      google.maps.event.trigger(space.marker, "click");
+    }
+
+    // Filtering the Space list
+    self.filter = ko.observable("");
+
+    this.filteredSpaceList = ko.dependentObservable(function() {
+      var q = this.filter().toLowerCase();
+      //var self = this;
+      if (!q) {
+      // Return self.spaceList() the original array;
+      return ko.utils.arrayFilter(self.spaceList(), function(item) {
+        item.marker.setVisible(true);
+        return true;
+      });
+      } else {
+        return ko.utils.arrayFilter(this.spaceList(), function(item) {
+          if (item.name.toLowerCase().indexOf(q) >= 0) {
+          return true;
+          } else {
+            item.marker.setVisible(false);
+          return false;
+          }
+        });
+      }
+    }, this);
+  };
+
+ // Activates knockout.js
+ko.applyBindings(new ViewModel());
 }
+
+'use strict';
+
+var mapError = function() {
+
+    document.getElementById('map-error').style.display = 'block';
+
+    document.getElementById('map-error').innerHTML = 'Sorry, something went wrong. Please try again later.';
+
+};
